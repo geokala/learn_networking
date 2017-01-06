@@ -1,3 +1,5 @@
+import learn_network.address_family as af
+
 class Node(object):
     """
         A network node (host or router- though really the distinction is
@@ -32,7 +34,7 @@ class Node(object):
             address.
         """
         self.interfaces[interface_name] = {
-            'address': address,
+            'address': af.IPv4(address),
             'connected_to': connected_node,
         }
 
@@ -49,11 +51,19 @@ class Node(object):
     def get_addresses(self):
         addresses = []
         for interface in self.interfaces.values():
-            # TODO: Make this work with addresses as instances
-            # of address family classes
-            addresses.append(interface['address'])
+            addresses.append(interface['address'].address)
         return addresses
 
     def find_route(self, destination):
-        # TODO: Need address family
-        pass
+        # Check directly connected nets first
+        for interface in self.interfaces.values():
+            if interface['address'].in_same_network(destination):
+                return interface['connected_to']
+
+        # Not directly connected, check route table
+        # Route table should not be just static_routes
+        for static_route in self.static_routes:
+            route = static_route.get(destination)
+            if route is not None:
+                break
+        return route
