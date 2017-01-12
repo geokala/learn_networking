@@ -14,6 +14,12 @@ class NodeManager(object):
     def __init__(self):
         self.nodes = {}
 
+    def get_node(self, node_id):
+        node = self.nodes.get(node)
+        if node is None:
+            raise NodeNotFoundError(node)
+        return node
+
     def add_node(self, node_id, node_type):
         if node_id in self.nodes.keys():
             raise DuplicateNodeIdError()
@@ -29,47 +35,43 @@ class NodeManager(object):
     def connect_nodes(self,
                       node1_id, node1_interface, node1_address,
                       node2_id, node2_interface, node2_address):
-        if node1_id not in self.nodes.keys():
-            raise NodeNotFoundError(node1_id)
-        if node2_id not in self.nodes.keys():
-            raise NodeNotFoundError(node2_id)
+        node1 = self.get_node(node1_id)
+        node2 = self.get_node(node2_id)
 
-        ifs1 = self.nodes[node1_id].interfaces.get(node1_interface, {})
+        ifs1 = node1.interfaces.get(node1_interface, {})
         if ifs1.get(
             'connected_to',
-            self.nodes[node2_id]
+            node2,
         ) not in (
             None,
-            self.nodes[node2_id]
+            node2
         ):
             self.disconnect_interface(node1_id, node1_interface)
-        ifs2 = self.nodes[node2_id].interfaces.get(node2_interface, {})
+        ifs2 = node2.interfaces.get(node2_interface, {})
         if ifs2.get(
             'connected_to',
-            self.nodes[node1_id]
+            node1,
         ) not in (
             None,
-            self.nodes[node1_id]
+            node1,
         ):
             self.disconnect_interface(node2_id, node2_interface)
 
-        self.nodes[node1_id].add_interface(
+        node1.add_interface(
             interface_name=node1_interface,
             address=node1_address,
-            remote_node=self.nodes[node2_id],
+            remote_node=node2,
             remote_interface=node2_interface,
         )
-        self.nodes[node2_id].add_interface(
+        node2.add_interface(
             interface_name=node2_interface,
             address=node2_address,
-            remote_node=self.nodes[node1_id],
+            remote_node=node1,
             remote_interface=node1_interface,
         )
 
     def disconnect_interface(self, node, interface):
-        node = self.nodes.get(node)
-        if node is None:
-            raise NodeNotFoundError(node)
+        node = self.get_node(node)
 
         interface = node.interfaces[interface]
 
@@ -108,23 +110,41 @@ class NodeManager(object):
                 node2_interface=node2_if,
                 node2_address=node2_addr,
             )
-    '''
-        There should be a list of nodes, and a method
-        should be provided to add nodes, which should
-        confirm that the new nodes do not have ID clashes.
 
-expected structure:
-nodes:
-  - id: node1
-    type: router
-  - id: node2
-    type: host
+    def add_packet(self, start_node, content, start, destination):
+        packet = Packet(
+            content=content,
+            source_address=source,
+            destination_address=destination,
+        )
 
-connections:
-  - node1: eth1: 192.0.2.1
-    node2: eth2: 192.0.2.2
-    '''
+        node = self.get_node(start_node)
 
+        node.packets.append(packet)
+
+    def run_network(self, iterations=10000):
+        for iteration in range(iterations):
+            routed_packets = []
+            for node in self.nodes.values():
+                routed_packets.extend(node.route_packets())
+            if len(routed_packets) == 0:
+                return
+            for packet in routed_packets:
+                packet['next_hop'].packets.append(
+                    packet['packet'],
+                )
+
+    def packet_received(self, node, contents, source, destination):
+        node = self.get_node(node)
+        for packet in node.packets:
+            if (
+                packet.contents == contents
+                and packet.source_address == source
+                and packet.destination_address == destination
+            ):
+                return True
+        # If we didn't find it by now, we won't.
+        return False
 
 
 class Node(object):
@@ -144,6 +164,7 @@ class Node(object):
         self.packets = []
         self.received_packets = []
         self.unroutable_packets = []
+        self.expired_packets = []
 
     def add_static_route(self, destination, next_hop):
         """
@@ -171,14 +192,23 @@ class Node(object):
         }
 
     def route_packets(self):
+        routed_packets = []
         for packet in self.packets:
             if packet.destination in self.get_addresses():
                 self.received_packets.append(packet)
             next_hop = self.find_route(packet.destination)
-            if next_hop is None:
+            if packet.ttl == 0:
+                self.expired_packets.append(packet)
+            elif next_hop is None:
                 self.unroutable_packets.append(packet)
             else:
-                next_hop.packets.append(packet)
+                packet.ttl -= 1
+                routed_packets.append({
+                    'current': self,
+                    'next_hop': next_hop,
+                    'packet': packet,
+                })
+        return routed_packets
 
     def get_addresses(self):
         addresses = []
