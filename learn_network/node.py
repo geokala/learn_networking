@@ -128,11 +128,14 @@ class NodeManager(object):
             for node in self.nodes.values():
                 routed_packets.extend(node.route_packets())
             if len(routed_packets) == 0:
-                return
+                # All done
+                return routed_packets
             for packet in routed_packets:
                 packet['next_hop'].packets.append(
                     packet['packet'],
                 )
+
+        return routed_packets
 
     def packet_received(self, node, contents, source, destination):
         node = self.get_node(node)

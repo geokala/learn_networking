@@ -2,7 +2,7 @@ from learn_network.node import NodeManager
 
 import yaml
 
-from copy import deepcopy
+from copy import copy, deepcopy
 
 class Runner(object):
     def __init__(self):
@@ -19,20 +19,57 @@ class Runner(object):
         self._nodes.load_from_dict(nodes_data)
 
     def load_objectives_from_yaml(self, file_location):
-        # TODO
-        pass
+        with open(file_location) as objectives_handle:
+            objectives_data = objectives_handle.read()
+        objectives_data = yaml.load(objectives_data)
+        self._objectives.extend(objectives_data['tasks'])
 
     def prepare_objective(self):
-        # TODO: Put in any new packets, etc from this objective
-        # then deepcopy current nodemanager state to state at start of objective
-        pass
+        current = self._objectives[self._objective_stage]
+
+        for packet in current['packets']:
+            self._nodes.add_packet(
+                start_node=packet['node'],
+                content=packet['contents'],
+                start=packet['source'],
+                destination=packet['destination'],
+            )
+        self._state_at_start_of_objective = deepcopy(
+            self._nodes,
+        )
+
+    def route_packets(self, iterations=1):
+        return self._nodes.run_network(iterations=iterations)
 
     def check_for_success(self):
-        # TODO: If objective number is greater than number of objectives, return True
-        # Set current state to state_before_check
-        # Then check for success
-        # If success, set current objective += 1 and return True
-        # Else, return False
+        if self._objective_stage >= len(self._objectives):
+            # All objectives completed, so yes- success... is!
+            return True
+
+        goal = self._objectives[self._objective_stage]['goal']
+
+        results = {
+            'pass': [],
+            'fail': [],
+        }
+        for packet in goal['packets_received']:
+            this_goal = deepcopy(packet)
+            this_goal['type'] = 'packet_received']
+            if self._nodes.packet_received(
+                node=this_goal['node'],
+                contents=this_goal['contents'],
+                source=this_goal['source'],
+                destination=this_goal['destination'],
+            ):
+                results['pass'].append(this_goal)
+            else:
+                results['fail'].append(this_goal)
+
+        if len(results['fail']) == 0:
+            # We succeeded! We can now move on to the next objective.
+            self._objective_stage += 1
+
+        return results
 
     def roll_back_to_start_of_objective(self):
         self.nodes = deepcopy(self._state_at_start_of_objective)
@@ -55,24 +92,24 @@ connections:
     node2: eth2: 192.0.2.2
 
 tasks:
-  - packet:
-      node: node1
-      source: 192.0.2.1
-      destination: 192.0.2.2
-      contents: hello node 2
+  - packets:
+      - node: node1
+        source: 192.0.2.1
+        destination: 192.0.2.2
+        contents: hello node 2
     goal:
-      packet_received:
+      packets_received:
         node: node2
         source_ 192.0.2.1
         destination: 192.0.2.2
         contents: hello node 2
-  - packet:
-      node: node2
-      source: 192.0.2.2
-      destination: 192.0.2.1
-      contents: hello node 1
+  - packets:
+      - node: node2
+        source: 192.0.2.2
+        destination: 192.0.2.1
+        contents: hello node 1
     goal:
-      packet_received:
+      packets_received:
         node: node1
         source_ 192.0.2.2
         destination: 192.0.2.1
