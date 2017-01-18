@@ -2,7 +2,8 @@ from learn_network.node import NodeManager
 
 import yaml
 
-from copy import copy, deepcopy
+from copy import deepcopy
+
 
 class Runner(object):
     def __init__(self):
@@ -54,7 +55,7 @@ class Runner(object):
         }
         for packet in goal['packets_received']:
             this_goal = deepcopy(packet)
-            this_goal['type'] = 'packet_received']
+            this_goal['type'] = 'packet_received'
             if self._nodes.packet_received(
                 node=this_goal['node'],
                 contents=this_goal['contents'],
@@ -115,4 +116,3 @@ tasks:
         destination: 192.0.2.1
         contents: hello node 1
     '''
-

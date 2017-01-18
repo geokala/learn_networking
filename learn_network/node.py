@@ -1,5 +1,5 @@
 import learn_network.address_family as af
-import yaml
+from learn_network.packet import Packet
 
 
 class DuplicateNodeIdError(Exception):
@@ -15,7 +15,7 @@ class NodeManager(object):
         self.nodes = {}
 
     def get_node(self, node_id):
-        node = self.nodes.get(node)
+        node = self.nodes.get(node_id)
         if node is None:
             raise NodeNotFoundError(node)
         return node
@@ -27,7 +27,7 @@ class NodeManager(object):
         self.nodes[node_id] = Node(
             node_type=node_type,
             node_id=node_id,
-        ))
+        )
 
     def del_node(self, node_id, node_type):
         self.nodes.pop(node_id)
@@ -97,11 +97,10 @@ class NodeManager(object):
 
         for conn in input_dict['connections']:
             details = conn.items()
-(node1, {eth1: 192.0.2.1})
             node1_id = details[0][0]
             node1_if, node1_addr = details[0][1].items()
-            node1_id = details[1][0]
-            node1_if, node1_addr = details[1][1].items()
+            node2_id = details[1][0]
+            node2_if, node2_addr = details[1][1].items()
             self.connect_nodes(
                 node1_id=node1_id,
                 node1_interface=node1_if,
@@ -114,7 +113,7 @@ class NodeManager(object):
     def add_packet(self, start_node, content, start, destination):
         packet = Packet(
             content=content,
-            source_address=source,
+            source_address=start,
             destination_address=destination,
         )
 
