@@ -6,6 +6,10 @@ class DuplicateNodeIdError(Exception):
     pass
 
 
+class DuplicateNodePositionError(Exception):
+    pass
+
+
 class NodeNotFoundError(Exception):
     pass
 
@@ -13,6 +17,7 @@ class NodeNotFoundError(Exception):
 class NodeManager(object):
     def __init__(self):
         self.nodes = {}
+        self.connections = {}
 
     def get_node(self, node_id):
         node = self.nodes.get(node_id)
@@ -20,9 +25,15 @@ class NodeManager(object):
             raise NodeNotFoundError(node)
         return node
 
-    def add_node(self, node_id, node_type):
+    def add_node(self, node_id, node_type, node_pos):
         if node_id in self.nodes.keys():
             raise DuplicateNodeIdError()
+
+        node_positions = [
+            node.position for node in self.nodes.values()
+        ]
+        if node_pos in node_positions:
+            raise DuplicateNodePositionError()
 
         self.nodes[node_id] = Node(
             node_type=node_type,
@@ -37,6 +48,10 @@ class NodeManager(object):
                       node2_id, node2_interface, node2_address):
         node1 = self.get_node(node1_id)
         node2 = self.get_node(node2_id)
+        current_conns = self.connections.get(
+            (node1_id, node2_id),
+            0
+        )
 
         ifs1 = node1.interfaces.get(node1_interface, {})
         if ifs1.get(
@@ -70,6 +85,8 @@ class NodeManager(object):
             remote_interface=node1_interface,
         )
 
+        self.connections[(node1_id, node2_id)] = current_conns + 1
+
     def disconnect_interface(self, node, interface):
         node = self.get_node(node)
 
@@ -87,12 +104,14 @@ class NodeManager(object):
         remote_node.interfaces[remote_interface]['connected_to'] = disconn
         interface['address'] = None
         interface['connected_to'] = disconn
+        self.connections[(node1_id, node2_id)] -= 1
 
     def load_from_dict(self, input_dict):
         for node in input_dict['nodes']:
             self.add_node(
                 node_id=node['id'],
                 node_type=node['type'],
+                node_pos=node['position'],
             )
 
         for conn in input_dict['connections']:

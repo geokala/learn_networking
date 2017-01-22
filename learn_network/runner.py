@@ -85,8 +85,10 @@ Task stuff should go in a goal/task runner/evaluator
 nodes:
   - id: node1
     type: router
+    position: 0,1
   - id: node2
     type: host
+    position: 2,1
 
 connections:
   - node1: eth1: 192.0.2.1
