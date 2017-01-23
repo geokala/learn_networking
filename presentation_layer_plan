@@ -1,0 +1,19 @@
+Two part:
+1. Decide which objects go where on display grid
+
+2. Frontend takes display grid and shows it, and allows necessary interactions (show routes, add routes, etc)
+
+
+
+1 (display grid generation):
+  - Put all nodes on grid at least three spaces apart. If no position  provided, start at 0,0 and spiral outwards (0, 3;  3, 3; 3, 0; 3, -3; 0, -3; etc)
+
+  - For each connection, leave a node in a different direction (n, s, e, w, nw, sw, ne, se); fail at this stage on more than 8 connections. Try to leave in direction that target node 'lives' in.
+
+  - Find shortest route on available tiles to reach other node.
+
+  - Available wiring symbols should be straight and turning corners (45, 90, 135 degree turns in either direction), as well as going straight across (horiz, vert, or diagonal). These tiles will be used to determine whether each new tile can be used for the route to the other node.
+
+  - Complain if other node is unreachable.
+
+  - Each wiring symbol should also be available with an envelope in the middle for display during packet routing tests.
