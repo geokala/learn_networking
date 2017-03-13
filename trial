@@ -23,6 +23,8 @@ class CLI(cmd.Cmd):
         # which simply doesn't return the ones we want to forget about
         # It should strip all undesired entries from a dir(self) and then
         # return what is left
+        # TODO: Might need to modify approach as current approach is not
+        # finding commands. See: /usr/lib/python3.4/cmd.py
         cmd_map = {
             'EOF': self.do_exit,
             'quit': self.do_exit,
@@ -77,6 +79,10 @@ class CLI(cmd.Cmd):
         self.do_load = self._loaded
         self.help_load = self._loaded_help
         self.complete_load = self._loaded_complete
+        self.do_check = self._do_check
+
+    def _do_check(self, line):
+        print(self.runner.check_for_success())
 
     # TODO: List nodes
     # TODO: List connections?
