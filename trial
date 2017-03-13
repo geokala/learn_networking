@@ -4,12 +4,13 @@ from learn_network.runner import Runner
 import os
 import sys
 
-class CLI(cmd.Cmd):
-    prompt_fmt = '{self.scenario}> '
-    scenario = "Scenario not loaded. Use 'load' to load one."
 
+class CLI(cmd.Cmd):
     def __init__(self):
         super(CLI, self).__init__()
+        self.prompt = "Scenario not loaded. Use 'load' to load one> "
+        self.do_load = self._load
+        self.help_load = self._load_help
         self.runner = Runner()
 
     def do_exit(self, _):
@@ -17,6 +18,10 @@ class CLI(cmd.Cmd):
         sys.exit(0)
 
     def default(self, line):
+        # TODO: This is probably better done with an overridden get_names
+        # which simply doesn't return the ones we want to forget about
+        # It should strip all undesired entries from a dir(self) and then
+        # return what is left
         cmd_map = {
             'EOF': self.do_exit,
             'quit': self.do_exit,
@@ -31,16 +36,42 @@ class CLI(cmd.Cmd):
     def help_exit(self):
         print('Exit.')
 
-    def do_load(self, filename):
+    def _load(self, filename):
         if os.path.isfile(filename):
             self.runner.load_nodes_from_yaml(filename)
             self.runner.load_objectives_from_yaml(filename)
-            return 'Scenario loaded'
+            self.prompt = '{filename}> '.format(filename=filename)
+            self.set_loaded_commands()
+            print('Scenario loaded')
         else:
-            return 'Could not find {file}'.format(file=filename)
+            print('Could not find {file}'.format(file=filename))
 
-    def help_load(self):
+    def _load_help(self):
         print('Load a scenario from given filename.')
+
+    # TODO: Load autocomplete
+    # >>> os.listdir(os.path.split('/tmp/th')[0])
+    # ['.lxterminal-socket:0.0-talkur', 'vmware-root', 'config-err-AAAC40',
+    #  '.X0-lock', '.ICE-unix', '.pcmanfm-socket--0-talkur', '.X11-unix',
+    # '.menu-cached-:0-talkur', 'ssh-SHiCevl6FLWN']
+    # >>> os.path.split('test/this/th')
+    # ('test/this', 'th')
+
+    def _loaded(self, filename):
+        # TODO: There should be a command to restart
+        print('Scenario already loaded.')
+
+    def _loaded_help(self):
+        print('This does nothing, you are already in a scenario.')
+
+    def set_loaded_commands(self):
+        self.do_load = self._loaded
+        self.help_load = self._loaded_help
+
+    # TODO: List nodes
+    # TODO: List connections?
+    # TODO: Create packets
+    # TODO: Attempt validation (showing step by step what happened on failure)
 
 if __name__ == '__main__':
     cli = CLI()
