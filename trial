@@ -11,6 +11,7 @@ class CLI(cmd.Cmd):
         self.prompt = "Scenario not loaded. Use 'load' to load one> "
         self.do_load = self._load
         self.help_load = self._load_help
+        self.complete_load = self._load_complete
         self.runner = Runner()
 
     def do_exit(self, _):
@@ -49,13 +50,21 @@ class CLI(cmd.Cmd):
     def _load_help(self):
         print('Load a scenario from given filename.')
 
-    # TODO: Load autocomplete
-    # >>> os.listdir(os.path.split('/tmp/th')[0])
-    # ['.lxterminal-socket:0.0-talkur', 'vmware-root', 'config-err-AAAC40',
-    #  '.X0-lock', '.ICE-unix', '.pcmanfm-socket--0-talkur', '.X11-unix',
-    # '.menu-cached-:0-talkur', 'ssh-SHiCevl6FLWN']
-    # >>> os.path.split('test/this/th')
-    # ('test/this', 'th')
+    def _load_complete(self, text, line, begidx, endidx):
+        full_path = line[len('load '):]
+        path, file_fragment = os.path.split(full_path)
+        path = path or '.'
+        if not os.path.isdir(path):
+            return []
+        else:
+            possible_results = os.listdir(path)
+            return [
+                result for result in possible_results
+                if result.startswith(text)
+            ]
+
+    def _loaded_complete(self, text, line, begidx, endidx):
+        return []
 
     def _loaded(self, filename):
         # TODO: There should be a command to restart
@@ -67,6 +76,7 @@ class CLI(cmd.Cmd):
     def set_loaded_commands(self):
         self.do_load = self._loaded
         self.help_load = self._loaded_help
+        self.complete_load = self._loaded_complete
 
     # TODO: List nodes
     # TODO: List connections?
