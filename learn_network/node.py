@@ -38,6 +38,7 @@ class NodeManager(object):
         self.nodes[node_id] = Node(
             node_type=node_type,
             node_id=node_id,
+            position=node_pos,
         )
 
     def del_node(self, node_id, node_type):
@@ -115,11 +116,14 @@ class NodeManager(object):
             )
 
         for conn in input_dict['connections']:
-            details = conn.items()
+            details = tuple(conn.items())
             node1_id = details[0][0]
-            node1_if, node1_addr = details[0][1].items()
+            if len(details[0][1]) > 1 or len(details[1][1]) > 1:
+                # TODO: Better error handling and message
+                raise ValueError('Must have only one conn mapping')
+            node1_if, node1_addr = tuple(details[0][1].items())[0]
             node2_id = details[1][0]
-            node2_if, node2_addr = details[1][1].items()
+            node2_if, node2_addr = tuple(details[1][1].items())[0]
             self.connect_nodes(
                 node1_id=node1_id,
                 node1_interface=node1_if,
@@ -174,12 +178,13 @@ class Node(object):
         arbitrary).
     """
 
-    def __init__(self, node_type, node_id):
+    def __init__(self, node_type, node_id, position):
         """
             Initialise this node, declaring its type.
         """
         self.node_type = node_type
         self.id = node_id
+        self.position = position
         self.static_routes = []
         self.interfaces = {}
         self.packets = []

@@ -1,0 +1,47 @@
+#! /usr/bin/env python
+import cmd
+from learn_network.runner import Runner
+import os
+import sys
+
+class CLI(cmd.Cmd):
+    prompt_fmt = '{self.scenario}> '
+    scenario = "Scenario not loaded. Use 'load' to load one."
+
+    def __init__(self):
+        super(CLI, self).__init__()
+        self.runner = Runner()
+
+    def do_exit(self, _):
+        print('Exiting.')
+        sys.exit(0)
+
+    def default(self, line):
+        cmd_map = {
+            'EOF': self.do_exit,
+            'quit': self.do_exit,
+        }
+
+        command = cmd_map.get(line)
+        if command is None:
+            super(CLI, self).default(line)
+        else:
+            command(None)
+
+    def help_exit(self):
+        print('Exit.')
+
+    def do_load(self, filename):
+        if os.path.isfile(filename):
+            self.runner.load_nodes_from_yaml(filename)
+            self.runner.load_objectives_from_yaml(filename)
+            return 'Scenario loaded'
+        else:
+            return 'Could not find {file}'.format(file=filename)
+
+    def help_load(self):
+        print('Load a scenario from given filename.')
+
+if __name__ == '__main__':
+    cli = CLI()
+    cli.cmdloop()

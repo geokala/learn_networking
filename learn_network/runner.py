@@ -22,8 +22,8 @@ class Runner(object):
     def load_objectives_from_yaml(self, file_location):
         with open(file_location) as objectives_handle:
             objectives_data = objectives_handle.read()
-        objectives_data = yaml.load(objectives_data)
-        self._objectives.extend(objectives_data['tasks'])
+        objectives_data = yaml.load(objectives_data).get('tasks', [])
+        self._objectives.extend(objectives_data)
 
     def prepare_objective(self):
         current = self._objectives[self._objective_stage]
