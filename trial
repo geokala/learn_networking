@@ -18,11 +18,10 @@ class CLI(cmd.Cmd):
         print('Exiting.')
         sys.exit(0)
 
+    def get_names(self):
+        return dir(self)
+
     def default(self, line):
-        # TODO: This is probably better done with an overridden get_names
-        # which simply doesn't return the ones we want to forget about
-        # It should strip all undesired entries from a dir(self) and then
-        # return what is left
         # TODO: Might need to modify approach as current approach is not
         # finding commands. See: /usr/lib/python3.4/cmd.py
         cmd_map = {

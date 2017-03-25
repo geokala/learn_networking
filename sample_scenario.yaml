@@ -1,0 +1,37 @@
+nodes:
+  - id: node1
+    type: router
+    position: 0,1
+  - id: node2
+    type: host
+    position: 2,1
+
+connections:
+  - node1:
+      eth1: 192.0.2.1
+    node2:
+      eth2: 192.0.2.2
+
+tasks:
+  - packets:
+      - node: node1
+        source: 192.0.2.1
+        destination: 192.0.2.2
+        contents: hello node 2
+    goal:
+      packets_received:
+        - node: node2
+          source: 192.0.2.1
+          destination: 192.0.2.2
+          contents: hello node 2
+  - packets:
+      - node: node2
+        source: 192.0.2.2
+        destination: 192.0.2.1
+        contents: hello node 1
+    goal:
+      packets_received:
+        - node: node1
+          source: 192.0.2.2
+          destination: 192.0.2.1
+          contents: hello node 1
