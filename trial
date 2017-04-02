@@ -3,6 +3,7 @@ import cmd
 from learn_network.runner import Runner
 import os
 import sys
+import yaml
 
 
 class CLI(cmd.Cmd):
@@ -22,8 +23,6 @@ class CLI(cmd.Cmd):
         return dir(self)
 
     def default(self, line):
-        # TODO: Might need to modify approach as current approach is not
-        # finding commands. See: /usr/lib/python3.4/cmd.py
         cmd_map = {
             'EOF': self.do_exit,
             'quit': self.do_exit,
@@ -42,6 +41,7 @@ class CLI(cmd.Cmd):
         if os.path.isfile(filename):
             self.runner.load_nodes_from_yaml(filename)
             self.runner.load_objectives_from_yaml(filename)
+            self.runner.prepare_objective()
             self.prompt = '{filename}> '.format(filename=filename)
             self.set_loaded_commands()
             print('Scenario loaded')
@@ -79,9 +79,17 @@ class CLI(cmd.Cmd):
         self.help_load = self._loaded_help
         self.complete_load = self._loaded_complete
         self.do_check = self._do_check
+        # TODO: help check
+        self.do_list_nodes = self._do_list_nodes
+        # TODO: help list_nodes
+
+    def _do_list_nodes(self, line):
+        print(self.runner.nodes.list_nodes())
 
     def _do_check(self, line):
-        print(self.runner.check_for_success())
+        #  TODO: Nicer output
+        print(yaml.dump(self.runner.run_and_check(),
+              default_flow_style=False))
 
     # TODO: List nodes
     # TODO: List connections?

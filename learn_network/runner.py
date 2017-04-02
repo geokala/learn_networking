@@ -7,17 +7,18 @@ from copy import deepcopy
 
 class Runner(object):
     def __init__(self):
-        self._nodes = NodeManager()
+        self.nodes = NodeManager()
         self._objectives = []
         self._objective_stage = 0
         self._state_at_start_of_objective = None
         self._state_before_checking_objective = None
+        self._checkpoints = {}
 
     def load_nodes_from_yaml(self, file_location):
         with open(file_location) as nodes_handle:
             nodes_data = nodes_handle.read()
         nodes_data = yaml.load(nodes_data)
-        self._nodes.load_from_dict(nodes_data)
+        self.nodes.load_from_dict(nodes_data)
 
     def load_objectives_from_yaml(self, file_location):
         with open(file_location) as objectives_handle:
@@ -29,18 +30,23 @@ class Runner(object):
         current = self._objectives[self._objective_stage]
 
         for packet in current['packets']:
-            self._nodes.add_packet(
+            self.nodes.add_packet(
                 start_node=packet['node'],
                 content=packet['contents'],
                 start=packet['source'],
                 destination=packet['destination'],
             )
         self._state_at_start_of_objective = deepcopy(
-            self._nodes,
+            self.nodes,
         )
 
     def route_packets(self, iterations=1):
-        return self._nodes.run_network(iterations=iterations)
+        return self.nodes.run_network(iterations=iterations)
+
+    def run_and_check(self):
+        self._state_before_checking_objective = deepcopy(self.nodes)
+        self.route_packets(iterations=1000)
+        return self.check_for_success()
 
     def check_for_success(self):
         if self._objective_stage >= len(self._objectives):
@@ -56,7 +62,7 @@ class Runner(object):
         for packet in goal['packets_received']:
             this_goal = deepcopy(packet)
             this_goal['type'] = 'packet_received'
-            if self._nodes.packet_received(
+            if self.nodes.packet_received(
                 node=this_goal['node'],
                 contents=this_goal['contents'],
                 source=this_goal['source'],
@@ -69,8 +75,17 @@ class Runner(object):
         if len(results['fail']) == 0:
             # We succeeded! We can now move on to the next objective.
             self._objective_stage += 1
+        else:
+            self.roll_back_to_before_check()
 
         return results
+
+    def set_checkpoint(self, name='checkpoint'):
+        self._checkpoints[name] = deepcopy(self.nodes)
+
+    def roll_back_to_checkpoint(self, name='checkpoint'):
+        if name in self.checkpoints:
+            self.nodes = deepcopy(self._checkpoints[name])
 
     def roll_back_to_start_of_objective(self):
         self.nodes = deepcopy(self._state_at_start_of_objective)
