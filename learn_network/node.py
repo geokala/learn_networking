@@ -220,9 +220,9 @@ class Node(object):
     def route_packets(self):
         routed_packets = []
         for packet in self.packets:
-            if packet.destination in self.get_addresses():
+            if packet.destination_address in self.get_addresses():
                 self.received_packets.append(packet)
-            next_hop = self.find_route(packet.destination)
+            next_hop = self.find_route(packet.destination_address)
             if packet.ttl == 0:
                 self.expired_packets.append(packet)
             elif next_hop is None:
@@ -247,6 +247,8 @@ class Node(object):
         for interface in self.interfaces.values():
             if interface['address'].in_same_network(destination):
                 return interface['connected_to']
+
+        route= None
 
         # Not directly connected, check route table
         # Route table should not be just static_routes

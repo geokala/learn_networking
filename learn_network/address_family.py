@@ -19,7 +19,16 @@ class IPv4(object):
             'where a, b, c, and d are decimals between 0 and 255.'
         )
         octets = address.split('.')
+        valid = True
         if len(octets) != 4:
+            valid = False
+
+        try:
+            octets = [int(octet) for octet in octets]
+        except ValueError:
+            valid = False
+
+        if not valid:
             raise AddressError(message)
 
         for octet in octets:
