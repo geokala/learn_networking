@@ -82,6 +82,10 @@ class CLI(cmd.Cmd):
         # TODO: help check
         self.do_list_nodes = self._do_list_nodes
         # TODO: help list_nodes
+        self.do_list_packets = self._do_list_packets
+        # TODO: help list_packets
+        self.do_route_packets = self._do_route_packets
+        # TODO: help route_packets
 
     def _do_list_nodes(self, line):
         print(self.runner.nodes.list_nodes())
@@ -90,6 +94,62 @@ class CLI(cmd.Cmd):
         #  TODO: Nicer output
         print(yaml.dump(self.runner.run_and_check(),
               default_flow_style=False))
+
+    def _do_list_packets(self, line):
+        for node in self.runner.nodes.nodes.values():
+            print('===========================')
+            print(node.id)
+            print('Queued:')
+            for packet in node.packets:
+                print('  Source: {source}'.format(
+                    source=packet.source_address,
+                ))
+                print('  Destination: {destination}'.format(
+                    destination=packet.destination_address,
+                ))
+                print('  TTL: {ttl}'.format(ttl=packet.ttl))
+                print('  Content: {content}'.format(
+                    content=packet.content,
+                ))
+                print('')
+            print('Received:')
+            for packet in node.received_packets:
+                print('  Source: {source}'.format(
+                    source=packet.source_address,
+                ))
+                print('  TTL: {ttl}'.format(ttl=packet.ttl))
+                print('  Content: {content}'.format(
+                    content=packet.content,
+                ))
+                print('')
+            print('Unroutable:')
+            for packet in node.unroutable_packets:
+                print('  Source: {source}'.format(
+                    source=packet.source_address,
+                ))
+                print('  Destination: {destination}'.format(
+                    destination=packet.destination_address,
+                ))
+                print('  TTL: {ttl}'.format(ttl=packet.ttl))
+                print('  Content: {content}'.format(
+                    content=packet.content,
+                ))
+                print('')
+            print('Expired:')
+            for packet in node.expired_packets:
+                print('  Source: {source}'.format(
+                    source=packet.source_address,
+                ))
+                print('  Destination: {destination}'.format(
+                    destination=packet.destination_address,
+                ))
+                print('  Content: {content}'.format(
+                    content=packet.content,
+                ))
+                print('')
+
+    def _do_route_packets(self, line):
+        self.runner.route_packets()
 
     # TODO: List nodes
     # TODO: List connections?
